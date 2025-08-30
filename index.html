@@ -1,0 +1,271 @@
+import React, { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { motion } from "framer-motion";
+
+// ===== TEMPLATE DATA SOAL CBT =====
+const questions = [
+  {
+    id: 1,
+    question: "Soal nomor 1 (isi pertanyaan di sini)",
+    options: [
+      "Pilihan A",
+      "Pilihan B",
+      "Pilihan C",
+      "Pilihan D",
+      "Pilihan E",
+    ],
+    answer: 0, // index jawaban benar
+  },
+  {
+    id: 2,
+    question: "Soal nomor 2 (isi pertanyaan di sini)",
+    options: [
+      "Pilihan A",
+      "Pilihan B",
+      "Pilihan C",
+      "Pilihan D",
+      "Pilihan E",
+    ],
+    answer: 0,
+  },
+  // Tambahkan soal berikutnya sampai id: 25
+];
+
+// ===== HALAMAN LOGIN =====
+function Login({ onLogin }) {
+  const [role, setRole] = useState("siswa");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [kelas, setKelas] = useState("XI-1");
+  const [absen, setAbsen] = useState("1");
+
+  const handleLogin = () => {
+    if (role === "guru") {
+      if (username === "solihan" && password === "1984") {
+        onLogin({ role: "guru", username });
+      } else {
+        alert("User/Password guru salah!");
+      }
+    } else {
+      if (username.trim() !== "") {
+        onLogin({ role: "siswa", username, kelas, absen });
+      } else {
+        alert("Nama harus diisi!");
+      }
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
+      <header className="w-full bg-green-800 text-white text-center py-4 text-xl font-bold">
+        PAI SMAN 1 UNGARAN CBT Application
+      </header>
+      <Card className="w-96 shadow-lg mt-6">
+        <CardContent>
+          <h2 className="text-center text-lg font-semibold mb-4">Selamat Datang</h2>
+          <div className="mb-2">
+            <label>Login sebagai:</label>
+            <select
+              className="w-full border p-2"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+            >
+              <option value="siswa">Siswa</option>
+              <option value="guru">Guru</option>
+            </select>
+          </div>
+
+          {role === "siswa" ? (
+            <>
+              <Input
+                placeholder="Nama Lengkap"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="mb-2"
+              />
+              <div className="mb-2">
+                <label>No. Absen</label>
+                <select
+                  className="w-full border p-2"
+                  value={absen}
+                  onChange={(e) => setAbsen(e.target.value)}
+                >
+                  {Array.from({ length: 36 }, (_, i) => (
+                    <option key={i + 1}>{i + 1}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-2">
+                <label>Kelas</label>
+                <select
+                  className="w-full border p-2"
+                  value={kelas}
+                  onChange={(e) => setKelas(e.target.value)}
+                >
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <option key={i + 1}>{`XI-${i + 1}`}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          ) : (
+            <>
+              <Input
+                placeholder="Username Guru"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="mb-2"
+              />
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="mb-2"
+              />
+            </>
+          )}
+
+          <Button className="w-full bg-blue-500 text-white" onClick={handleLogin}>
+            Login
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ===== HALAMAN CBT SISWA =====
+function CBT({ user, onFinish }) {
+  const [current, setCurrent] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [timeLeft, setTimeLeft] = useState(40 * 60); // 40 menit
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleAnswer = (idx) => {
+    setAnswers({ ...answers, [questions[current].id]: idx });
+  };
+
+  const score = Object.keys(answers).reduce((acc, qid) => {
+    const q = questions.find((x) => x.id == qid);
+    if (answers[qid] === q.answer) return acc + 4;
+    return acc;
+  }, 0);
+
+  const finishExam = () => {
+    onFinish(score);
+  };
+
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="flex justify-between bg-green-800 text-white px-6 py-3">
+        <div className="font-bold">PAI SMAN 1 UNGARAN CBT</div>
+        <div>{user.username}</div>
+      </header>
+      <div className="flex justify-end p-4">
+        <div className="bg-red-500 text-white px-3 py-1 rounded">
+          {minutes}:{seconds.toString().padStart(2, "0")}
+        </div>
+      </div>
+      <div className="p-6">
+        <h2 className="font-semibold mb-2">Soal {current + 1}</h2>
+        <p className="mb-4">{questions[current].question}</p>
+        <div className="space-y-2">
+          {questions[current].options.map((opt, idx) => (
+            <label key={idx} className="flex items-center space-x-2">
+              <input
+                type="radio"
+                checked={answers[questions[current].id] === idx}
+                onChange={() => handleAnswer(idx)}
+              />
+              <span>{opt}</span>
+            </label>
+          ))}
+        </div>
+
+        <div className="flex justify-between mt-6">
+          <Button
+            onClick={() => setCurrent((c) => Math.max(0, c - 1))}
+            disabled={current === 0}
+          >
+            Soal Sebelumnya
+          </Button>
+          <Button
+            className="bg-orange-500 text-white"
+            onClick={() => alert("Ditandai ragu-ragu!")}
+          >
+            Ragu-Ragu
+          </Button>
+          {current < questions.length - 1 ? (
+            <Button onClick={() => setCurrent((c) => c + 1)}>Soal Selanjutnya</Button>
+          ) : (
+            <Button className="bg-blue-600 text-white" onClick={finishExam}>
+              Selesai Ujian
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===== HALAMAN REKAP GURU =====
+function GuruRekap({ results }) {
+  return (
+    <div className="p-6">
+      <h2 className="font-bold text-lg mb-4">Rekap Hasil Ujian</h2>
+      <table className="w-full border">
+        <thead>
+          <tr className="bg-gray-200">
+            <th>Nama</th>
+            <th>Kelas</th>
+            <th>Absen</th>
+            <th>Nilai</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {results.map((r, i) => (
+            <tr key={i} className="border-t">
+              <td>{r.username}</td>
+              <td>{r.kelas}</td>
+              <td>{r.absen}</td>
+              <td>{r.score}</td>
+              <td>{r.score >= 80 ? "Tuntas" : "Tidak Tuntas"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <Button className="mt-4 bg-green-600 text-white">Print Rekap</Button>
+    </div>
+  );
+}
+
+// ===== APP UTAMA =====
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [results, setResults] = useState([]);
+
+  const handleFinish = (score) => {
+    alert(
+      score >= 80 ? "Selamat anda tuntas" : "Maaf kamu harus remidi"
+    );
+    setResults([...results, { ...user, score }]);
+    setUser(null);
+  };
+
+  if (!user) return <Login onLogin={setUser} />;
+  if (user.role === "siswa") return <CBT user={user} onFinish={handleFinish} />;
+  if (user.role === "guru") return <GuruRekap results={results} />;
+}
